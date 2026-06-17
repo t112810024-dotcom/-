@@ -1,0 +1,17 @@
+# 忽略資料集資料夾
+dataset/
+
+# 忽略虛擬環境
+venv/
+venv_phm/
+
+# 忽略暫存檔
+__pycache__/
+*.pyc
+
+# 忽略模型權重檔 (如果不想上傳大檔案的話)
+*.pth
+*.npy
+# 忽略 GradCAM 的圖片結果
+*.png
+*.jpg
