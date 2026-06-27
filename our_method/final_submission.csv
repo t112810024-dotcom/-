@@ -33,7 +33,7 @@ Spacecraft No.,ID,task1,task2,task3,task4,task5,Test condition
 4,209,1,1,6,0,100,BP6 bubble anomaly
 4,210,0,0,0,0,100,Normal
 4,211,0,0,0,0,100,Normal
-4,212,0,0,0,0,100,Normal
+4,212,1,2,0,1,93,SV1 valve fault
 4,213,0,0,0,0,100,Normal
 4,214,1,2,0,3,40,SV3 valve fault
 4,215,0,0,0,0,100,Normal
