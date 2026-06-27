@@ -7,7 +7,7 @@ from models import MultiTaskDRSN, AutoencoderGatekeeper
 if __name__ == '__main__':
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print("=" * 60)
-    print(f"🕵️‍♂️ 啟動【🏆 官方連續序列版：純淨推論引擎 🏆】")
+    print(f"🕵️‍♂️ 啟動【🏆 官方連續序列版：大容量純淨推論引擎 🏆】")
     print("=" * 60)
     
     ae_gatekeeper = AutoencoderGatekeeper().to(device)
@@ -27,16 +27,10 @@ if __name__ == '__main__':
     if x_test_data.shape[-1] == 7:
         x_test_data = np.transpose(x_test_data, (0, 3, 1, 2))
         
-    # 🎯 恢復大會正統、完美的連續 46 筆 ID
     test_ids = list(range(178, 224))
-    
-    if os.path.exists('ae_threshold.npy'):
-        AE_THRESHOLD = float(np.load('ae_threshold.npy')[0])
-    else:
-        AE_THRESHOLD = 0.1313
+    AE_THRESHOLD = float(np.load('ae_threshold.npy')[0]) if os.path.exists('ae_threshold.npy') else 0.1313
         
     output_rows = []
-    
     for idx, case_id in enumerate(test_ids):
         spacecraft_no = 1 if case_id <= 200 else 4
         inputs = torch.tensor(x_test_data[idx], dtype=torch.float32).unsqueeze(0).to(device)
@@ -56,11 +50,7 @@ if __name__ == '__main__':
         test_condition = "Normal"
         
         if recon_error > AE_THRESHOLD:
-            task1 = 1
-            task2 = 1  
-            task3 = pred_t3 if pred_t3 != 0 else 1
-            task4 = 0
-            task5 = 100
+            task1, task2, task3, task4, task5 = 1, 1, (pred_t3 if pred_t3 != 0 else 1), 0, 100
             test_condition = f"BP{task3} bubble anomaly"
         else:
             task1 = pred_t1
@@ -68,19 +58,10 @@ if __name__ == '__main__':
                 task1, task2, task3, task4, task5 = 0, 0, 0, 0, 100
                 test_condition = "Normal"
             elif pred_t2 == 1:
-                task1 = 1
-                task2 = 1  
-                task3 = pred_t3 if pred_t3 != 0 else 1
-                task4 = 0
-                task5 = 100
+                task1, task2, task3, task4, task5 = 1, 1, (pred_t3 if pred_t3 != 0 else 1), 0, 100
                 test_condition = f"BP{task3} bubble anomaly"
             elif pred_t2 == 2:
-                task1 = 1
-                task2 = 2  
-                task3 = 0
-                task4 = pred_t4 if pred_t4 != 0 else 1
-                task5 = int(round(pred_t5))
-                task5 = max(0, min(100, task5))
+                task1, task2, task3, task4, task5 = 1, 2, 0, (pred_t4 if pred_t4 != 0 else 1), max(0, min(100, int(round(pred_t5))))
                 test_condition = f"SV{task4} valve fault"
                 
         row = {
@@ -91,9 +72,6 @@ if __name__ == '__main__':
         output_rows.append(row)
 
     df_output = pd.DataFrame(output_rows)
-    official_columns = ["Spacecraft No.", "ID", "task1", "task2", "task3", "task4", "task5", "Test condition"]
-    df_output = df_output[official_columns]
-    
-    output_csv_path = r"C:\Users\WS\Desktop\新方法\our_method\final_submission.csv"
-    df_output.to_csv(output_csv_path, index=False)
-    print(f"🎉【純淨版推論完畢！】")
+    df_output = df_output[["Spacecraft No.", "ID", "task1", "task2", "task3", "task4", "task5", "Test condition"]]
+    df_output.to_csv(r"C:\Users\WS\Desktop\新方法\our_method\final_submission.csv", index=False)
+    print(f"🎉【新版大容量推論完畢，報表已完美更新！】")
