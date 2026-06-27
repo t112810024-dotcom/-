@@ -1,5 +1,6 @@
 import os
 import torch
+import torch.nn.functional as F
 import numpy as np
 import pandas as pd
 from models import MultiTaskDRSN, AutoencoderGatekeeper
@@ -7,7 +8,7 @@ from models import MultiTaskDRSN, AutoencoderGatekeeper
 if __name__ == '__main__':
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print("=" * 60)
-    print(f"🕵️‍♂️ 啟動【🏆 官方連續序列版：大容量純淨推論引擎 🏆】")
+    print(f"🕵️‍♂️ 啟動【🏆 物理開度聯動校正版：終極純淨推論引擎 🏆】")
     print("=" * 60)
     
     ae_gatekeeper = AutoencoderGatekeeper().to(device)
@@ -28,7 +29,7 @@ if __name__ == '__main__':
         x_test_data = np.transpose(x_test_data, (0, 3, 1, 2))
         
     test_ids = list(range(178, 224))
-    AE_THRESHOLD = float(np.load('ae_threshold.npy')[0]) if os.path.exists('ae_threshold.npy') else 0.1313
+    AE_THRESHOLD = float(np.load('ae_threshold.npy')[0]) if os.path.exists('ae_threshold.npy') else 1.3121
         
     output_rows = []
     for idx, case_id in enumerate(test_ids):
@@ -40,11 +41,20 @@ if __name__ == '__main__':
             recon_error = torch.mean((inputs - recon_inputs) ** 2).item()
             outputs = model(inputs)
             
+            # 🧠 計算分類機率
+            t2_probs = F.softmax(outputs['task2'], dim=1).cpu().numpy()[0]
+            
         pred_t1 = torch.argmax(outputs['task1'], dim=1).item()
         pred_t2 = torch.argmax(outputs['task2'], dim=1).item()
         pred_t3 = torch.argmax(outputs['task3'], dim=1).item()
         pred_t4 = torch.argmax(outputs['task4'], dim=1).item()
         pred_t5 = outputs['task5'].item()
+        
+        # 🔒 【核心物理聯動】利用 2.78% 超高精度開度進行邊界反哺
+        # 如果模型判定為 Normal (0)，但迴歸出的開度明顯偏離 100 (例如預測值 < 97.5)
+        # 且模型對 Fault (2) 的懷疑度大於 10% (probs[2] > 0.1) -> 判定為隱形早期故障！
+        if pred_t2 == 0 and pred_t5 < 97.5 and t2_probs[2] > 0.10:
+            pred_t2 = 2
         
         task1, task2, task3, task4, task5 = 0, 0, 0, 0, 100
         test_condition = "Normal"
@@ -74,4 +84,4 @@ if __name__ == '__main__':
     df_output = pd.DataFrame(output_rows)
     df_output = df_output[["Spacecraft No.", "ID", "task1", "task2", "task3", "task4", "task5", "Test condition"]]
     df_output.to_csv(r"C:\Users\WS\Desktop\新方法\our_method\final_submission.csv", index=False)
-    print(f"🎉【新版大容量推論完畢，報表已完美更新！】")
+    print(f"🎉【物理聯動校正完畢，最終推論報表已生成！】")
