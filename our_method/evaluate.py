@@ -1,14 +1,14 @@
-import os  # 💡 補上這個漏掉的匯入
+import os
 import pandas as pd
 import numpy as np
 from sklearn.metrics import classification_report, confusion_matrix
 
 if __name__ == '__main__':
     print("=" * 60)
-    print(f"🏆 【大會官方盲測集 - 終極正統驗收場】")
+    print(f"🏆 【大會官方盲測集 - 終極正統驗收場（精簡精確版）】")
     print("=" * 60)
     
-    # 1. 讀取你剛剛生成的預測檔案
+    # 1. 讀取預測檔案
     pred_path = r"C:\Users\WS\Desktop\新方法\our_method\final_submission.csv"
     if not os.path.exists(pred_path):
         print("❌ 錯誤：找不到預測檔案，請先執行 python predict.py")
@@ -16,7 +16,7 @@ if __name__ == '__main__':
         
     df_pred = pd.read_csv(pred_path)
     
-    # 2. 建立官方真實標準答案 Dataframe
+    # 2. 建立官方真實標準答案 Dataframe (對齊大會官方任務標準)
     truth_rows = [
         [178, 1, 2, 2, 0, 100, "BP2 bubble anomaly"],  [179, 1, 3, 0, 2, 22, "SV2 valve fault"],
         [180, 0, 0, 0, 0, 100, "Normal"],             [181, 1, 3, 0, 4, 76, "SV4 valve fault"],
@@ -47,21 +47,31 @@ if __name__ == '__main__':
     # 3. 合併對齊數據
     df_m = pd.merge(df_pred, df_truth, on="ID")
     
-    # 將 Condition 轉化為標準分類標籤進行指標計算
-    def get_cls(s):
-        if "Normal" in s: return 2
-        if "fault" in s: return 1
-        return 0
-        
-    y_pred_cls = [get_cls(s) for s in df_m["Test condition"]]
-    y_true_cls = [get_cls(s) for s in df_m["cond"]]
+    # ✨ 修正：直接拿大會定義的故障類型欄位 (task2) 比對，更具說服力
+    y_pred_task2 = df_m["task2"].values
+    y_true_task2 = df_m["t2"].values
     
-    acc = np.mean(np.array(y_pred_cls) == np.array(y_true_cls)) * 100
+    # 計算整體 task2 分類準確度與 task5 MAE 誤差
+    acc = np.mean(y_pred_task2 == y_true_task2) * 100
     mae = np.mean(np.abs(df_m["task5"].values - df_m["t5"].values))
     
-    print(f"🎯 大會盲測集真實分類準確度 : {acc:.2f} %")
-    print(f"📈 大會盲測集真實開度預測誤差 : {mae:.2f} %")
+    print(f"🎯 大會盲測集真實分類準確度 (Task 2) : {acc:.2f} %")
+    print(f"📈 大會盲測集真實開度預測誤差 (Task 5) : {mae:.2f} %")
     print("-" * 60)
-    print(classification_report(y_true_cls, y_pred_cls, target_names=['Anomaly', 'Fault', 'Normal']))
+    
+    # 按照大會標準分類 ID 排序：0:正常, 1:未知異常, 2:氣泡異常, 3:閥門故障
+    print(classification_report(y_true_task2, y_pred_task2, 
+                                target_names=['Normal(0)', 'Unknown(1)', 'Bubble(2)', 'Valve(3)']))
+    
     print("🧩 大會實戰混淆矩陣 (Confusion Matrix):")
-    print(confusion_matrix(y_true_cls, y_pred_cls))
+    print(confusion_matrix(y_true_task2, y_pred_task2))
+    print("-" * 60)
+    
+    # ✨ 新增：自動抓出錯誤的 ID，方便分析錯誤
+    df_errors = df_m[df_m["task2"] != df_m["t2"]]
+    if not df_errors.empty:
+        print(f"🕵️‍♂️ 偵測到分類不一致的樣本（共 {len(df_errors)} 筆）：")
+        for _, row in df_errors.iterrows():
+            print(f"   [ID {int(row['ID'])}] 預測: task2={int(row['task2'])}, 實際: t2={int(row['t2'])} ({row['cond']})")
+    else:
+        print("🎉 恭喜！所有分類任務完美 100% 答對！")
